@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>SID — Companion Robot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <div id="tap-unlock">
+    <div class="tap-content">
+      <div class="tap-eye-icon">👁</div>
+      <div class="tap-title">SID</div>
+      <div class="tap-sub">TAP TO ACTIVATE</div>
+    </div>
+  </div>
+  <video id="face-video" style="display:none;position:absolute;width:1px;height:1px;" playsinline muted></video>
+  <canvas id="face-canvas" style="display:none;position:absolute;width:1px;height:1px;"></canvas>
+  <button class="corner-btn" id="fullscreen-btn" title="Fullscreen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+  </button>
+  <button class="corner-btn" id="menu-btn" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div id="mic-indicator">
+    <div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div>
+    <div class="mic-bar"></div><div class="mic-bar"></div><div class="mic-bar"></div>
+    <div class="mic-bar"></div>
+  </div>
+  <div id="reaction-label">STANDBY</div>
+  <div id="face-indicator">● NO FACE</div>
+  <button id="capture-btn" title="Capture and Analyse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    <span>ANALYSE</span>
+  </button>
+  <div id="main-screen">
+    <div id="eyes-wrap">
+      <div class="eye-outer" id="eye-left">
+        <div class="eye-scan"></div>
+        <div class="eye-iris"></div>
+        <div class="eye-pupil" id="pupil-left"></div>
+        <div class="eye-highlight"></div>
+        <div class="eyelid-top"></div>
+        <div class="eyelid-bot"></div>
+      </div>
+      <div class="eye-outer" id="eye-right">
+        <div class="eye-scan"></div>
+        <div class="eye-iris"></div>
+        <div class="eye-pupil" id="pupil-right"></div>
+        <div class="eye-highlight"></div>
+        <div class="eyelid-top"></div>
+        <div class="eyelid-bot"></div>
+      </div>
+    </div>
+  </div>
+  <div id="speech-bubble"></div>
+  <div id="location-toast"></div>
+  <div id="camera-overlay">
+    <video id="cam-preview" autoplay playsinline muted></video>
+    <div id="cam-overlay-label">📷 VISION MODE ACTIVE</div>
+    <button id="cam-close">✕</button>
+  </div>
+  <div id="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <div id="status-text">> INITIALISING...</div>
+  </div>
+  <div id="menu-overlay"></div>
+  <div id="menu-panel">
+    <div class="menu-header">
+      <span>SID SETTINGS</span>
+      <div class="menu-close" id="menu-close">✕</div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">🌐 LLM Server (Ollama / ngrok)</div>
+      <div class="wifi-input-row">
+        <input type="text" id="llm-url-input" class="wifi-input" placeholder="https://xxxx.ngrok-free.app">
+      </div>
+      <button class="btn-primary" id="save-llm-btn" style="width:100%;margin-top:6px;">SAVE &amp; TEST</button>
+      <div id="llm-status" style="font-size:10px;color:var(--text-dim);margin-top:6px;min-height:14px;"></div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">🤖 Robot (ROS / FastAPI)</div>
+      <div class="wifi-input-row">
+        <input type="text" id="rpi-ip" class="wifi-input" placeholder="192.168.x.x">
+        <input type="text" id="rpi-port" class="wifi-input" placeholder="8080" style="width:70px;flex:none;">
+      </div>
+      <button class="btn-primary" id="rpi-connect-btn" style="width:100%;margin-top:6px;">CONNECT</button>
+      <div id="rpi-status">Not connected</div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">Eye Colour</div>
+      <div class="color-grid" id="color-grid"></div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">Mood Override</div>
+      <div class="mood-grid" id="mood-grid"></div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">Audio Settings</div>
+      <div class="slider-row">
+        <span class="slider-label">Volume</span>
+        <input type="range" id="vol-slider" min="0" max="100" value="80" step="1">
+        <span class="slider-val" id="vol-val">80</span>
+      </div>
+      <div class="toggle-row"><span>Always-on Mic</span><div class="toggle on" id="mic-toggle"></div></div>
+      <div class="toggle-row"><span>Camera Active</span><div class="toggle on" id="cam-toggle"></div></div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-section-title">Eye Behaviour</div>
+      <div class="slider-row">
+        <span class="slider-label">Blink Rate</span>
+        <input type="range" id="blink-slider" min="1" max="10" value="4" step="1">
+        <span class="slider-val" id="blink-val">4</span>
+      </div>
+      <div class="toggle-row"><span>Random Motion</span><div class="toggle on" id="motion-toggle"></div></div>
+      <div class="toggle-row"><span>Follow Touch</span><div class="toggle on" id="touch-toggle"></div></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
