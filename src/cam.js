@@ -10,8 +10,8 @@ export const camCallbacks = {
   speak:        null,  // (text) => void
 };
 
-let camStream     = null;
-let blazeModel    = null;
+let camStream    = null;
+let blazeModel   = null;
 let faceDetecting = false;
 let lastFaceTime  = 0;
 let captureCanvas = null;
@@ -21,61 +21,20 @@ function cb(name, ...args) { if (camCallbacks[name]) camCallbacks[name](...args)
 export function getCamStream() { return camStream; }
 
 export async function startCam() {
-  // ── FIX #1: Try front camera with exact first, fall back gracefully ──
-  const constraints = [
-    // First attempt: exact front camera (most explicit)
-    { video: { facingMode: { exact: 'user' }, width: { ideal: 640 }, height: { ideal: 480 } } },
-    // Second attempt: soft preference for front camera
-    { video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } },
-    // Third attempt: any camera (last resort)
-    { video: true },
-  ];
-
-  let lastError = null;
-  for (const constraint of constraints) {
-    try {
-      camStream = await navigator.mediaDevices.getUserMedia(constraint);
-      break; // success — stop trying
-    } catch (e) {
-      lastError = e;
-      console.warn('Camera attempt failed:', e.name, e.message, '| trying next constraint...');
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:{exact: "user"}, width: { ideal: 640 }, height: { ideal: 480 } },
+    });
+    cb('updateStatus', 'CAM ACTIVE');
+    // Hook preview into face-video for frame capture
+    if (dom.faceVideo) {
+      dom.faceVideo.srcObject = camStream;
+      dom.faceVideo.play().catch(() => {});
     }
+    loadFaceModel();
+  } catch (e) {
+    cb('updateStatus', 'CAM DENIED', 'warn');
   }
-
-  if (!camStream) {
-    // ── FIX #2: Show a meaningful error instead of silently failing ──
-    console.error('All camera attempts failed. Last error:', lastError);
-    const reason = lastError?.name === 'NotAllowedError'
-      ? 'Permission denied — allow camera in browser settings'
-      : lastError?.name === 'NotFoundError'
-      ? 'No camera found on this device'
-      : lastError?.name === 'NotReadableError'
-      ? 'Camera is in use by another app'
-      : `Camera error: ${lastError?.name}`;
-    cb('updateStatus', `CAM DENIED — ${reason}`, 'warn');
-    return;
-  }
-
-  cb('updateStatus', 'CAM ACTIVE');
-
-  // ── FIX #3: Hook stream into face-video AND cam-preview ──
-  if (dom.faceVideo) {
-    dom.faceVideo.srcObject = camStream;
-    dom.faceVideo.setAttribute('playsinline', true); // required on iOS/Android
-    dom.faceVideo.muted = true;
-    dom.faceVideo.play().catch(e => console.warn('faceVideo play failed:', e));
-  }
-
-  // Also pipe into the camera overlay preview if it exists
-  const camPreview = document.getElementById('cam-preview');
-  if (camPreview) {
-    camPreview.srcObject = camStream;
-    camPreview.setAttribute('playsinline', true);
-    camPreview.muted = true;
-    camPreview.play().catch(e => console.warn('camPreview play failed:', e));
-  }
-
-  loadFaceModel();
 }
 
 export function stopCam() {
@@ -122,7 +81,6 @@ async function startFaceDetection() {
   dom.faceCanvas.width  = 320;
   dom.faceCanvas.height = 240;
   faceDetecting = true;
-  detectLoop(); // ── FIX #4: Actually START the loop (was missing before!) ──
 }
 
 async function detectLoop() {
