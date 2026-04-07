@@ -9,7 +9,15 @@ import { setMood, wireTTSCallbacks, scheduleBlink } from './eye.js';
 import { speak, loadVoices }              from './tts.js';
 import { startMic, stopMic, micCallbacks } from './mic.js';
 import { startCam, stopCam, captureFrame, camCallbacks } from './cam.js';
-import { askLLM, askVision }              from './llm.js';
+import { askLLM, askVision, parseReply } from './llm.js';
+
+// ── LLM abort controller ─────────────────────────────────────
+// Replaced on every new LLM call; cancelled by the stop button.
+let llmAbortController = new AbortController();
+function newLLMAbort() {
+  llmAbortController = new AbortController();
+  return llmAbortController.signal;
+}
 
 // ══════════════════════
 //  DOM REF POPULATION
@@ -131,9 +139,10 @@ async function handleCaptureAndAnalyse() {
     const base64 = dataUrl.split(',')[1];
     const prompt  = state.pendingVisionPrompt || 'Describe what you see in this image in 2-3 sentences.';
     const reply   = await askVision(base64, prompt);
+    const vEmotion = detectEmotion(reply);          // keyword scan (vision model)
     showSpeech(reply, true);
     speak(reply);
-    setMood(detectEmotion(reply));
+    setMood(vEmotion);
     updateStatus('VISION DONE');
   } catch (e) {
     const msg = 'I had trouble analysing that. Check the LLM server connection.';
@@ -199,12 +208,17 @@ async function processSpokenInput(rawText, lower) {
   setMood('thinking');
   updateStatus('THINKING...');
   try {
-    const reply = await askLLM(rawText);
-    showSpeech(reply);
-    speak(reply);
-    setMood(detectEmotion(reply));
-    updateStatus('SID: ' + reply.substring(0, 50));
+    const raw             = await askLLM(rawText, newLLMAbort());
+    const { emotion, clean } = parseReply(raw);   // extract tag + strip ALL markdown
+    showSpeech(clean);
+    speak(clean);
+    setMood(emotion || detectEmotion(raw));        // tag wins; keyword scan as fallback
+    updateStatus('SID: ' + clean.substring(0, 50));
   } catch (e) {
+    if (e.name === 'AbortError') {
+      // User pressed stop — silent, already handled
+      return;
+    }
     const msg = 'I had trouble reaching my brain. Check the LLM server.';
     showSpeech(msg); speak(msg); setMood('worried');
     updateStatus('LLM ERROR', 'warn');
@@ -212,15 +226,38 @@ async function processSpokenInput(rawText, lower) {
   }
 }
 
+// ── Emotion detection — two layers ─────────────────────────
+// Layer 1: parse [EMOTION:tag] injected by the LLM system prompt.
+// Layer 2: rich keyword fallback for vision replies / LLM lapses.
 function detectEmotion(text) {
+  // Layer 1 — explicit tag from LLM
+  const tagMatch = text.match(/\[EMOTION:([\w]+)\]/i);
+  if (tagMatch) {
+    const e = tagMatch[1].toLowerCase();
+    if (reactions[e]) return e;
+  }
+  // Layer 2 — keyword scan
   const l = text.toLowerCase();
-  if (/happy|great|wonderful|excellent|amazing|love|fantastic/.test(l)) return 'happy';
-  if (/sorry|sad|unfortunate|regret/.test(l))                           return 'sad';
-  if (/think|consider|wonder|hmm|perhaps/.test(l))                      return 'thinking';
-  if (/wow|incredible|amazing|!/.test(l))                               return 'excited';
-  if (/confused|unclear|not sure|don.t understand/.test(l))             return 'confused';
-  if (/curious|interesting|interesting/.test(l))                        return 'curious';
+  if (/\blove\b|adore|cherish|heart/.test(l))                      return 'love';
+  if (/haha|lol|funny|hilarious|laugh/.test(l))                     return 'laughing';
+  if (/wow|incredible|unbelievable|no way|whoa/.test(l))            return 'surprised';
+  if (/excited|amazing|awesome|fantastic|wonderful/.test(l))        return 'excited';
+  if (/happy|glad|pleased|delighted|yay/.test(l))                   return 'happy';
+  if (/sorry|sad|unfortunate|regret|miss you/.test(l))              return 'sad';
+  if (/angry|furious|annoyed|frustrat|rage/.test(l))                return 'angry';
+  if (/scared|afraid|terrified|fear|danger/.test(l))                return 'scared';
+  if (/worried|concern|anxious|nervous|uneasy/.test(l))             return 'worried';
+  if (/confused|unclear|not sure|don.t understand|lost/.test(l))    return 'confused';
+  if (/curious|interesting|i wonder|tell me more/.test(l))          return 'curious';
+  if (/think|consider|hmm|perhaps|let me|calculating/.test(l))      return 'thinking';
+  if (/tired|sleepy|yawn|exhausted|drowsy/.test(l))                 return 'sleepy';
+  if (/bored|whatever|meh/.test(l))                                 return 'bored';
   return 'speaking';
+}
+
+// Strip [EMOTION:tag] from reply before showing / speaking it
+function stripEmotionTag(text) {
+  return text.replace(/\[EMOTION:[\w]+\]\s*/i, '').trim();
 }
 
 // ══════════════════════
@@ -358,6 +395,16 @@ function wireCallbacks() {
   // mic → main
   micCallbacks.updateStatus       = updateStatus;
   micCallbacks.processSpokenInput = processSpokenInput;
+  micCallbacks.onStop = () => {
+    // Abort any in-flight LLM request
+    llmAbortController.abort();
+    updateStatus('STOPPED');
+    // Hide speech bubble immediately
+    if (dom.speechBubble) {
+      dom.speechBubble.classList.remove('show');
+      clearTimeout(dom.speechBubble._t);
+    }
+  };
 
   // cam → main
   camCallbacks.updateStatus = updateStatus;

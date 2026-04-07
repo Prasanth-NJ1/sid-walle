@@ -1,7 +1,11 @@
-// ═══════════════════════
+// ═══════════════════════════════
 //  tts.js — Text-to-Speech
-// ═══════════════════════
+//
+//  FIX: onend now calls mic.onTTSEnd() so the self-listening
+//  gate in mic.js can release STT with the 300 ms silence buffer.
+// ═══════════════════════════════
 import { state } from './state.js';
+import { onTTSEnd } from './mic.js';
 
 export function loadVoices() {
   return new Promise(resolve => {
@@ -36,9 +40,22 @@ export async function speak(text) {
   const v = pickVoice(voices);
   if (v) utt.voice = v;
 
-  utt.onstart = () => { state.isSpeaking = true;  if (ttsCallbacks.onStart) ttsCallbacks.onStart(); };
-  utt.onend   = () => { state.isSpeaking = false; if (ttsCallbacks.onEnd)   ttsCallbacks.onEnd();   };
-  utt.onerror = (e) => { state.isSpeaking = false; console.warn('TTS:', e.error); };
+  utt.onstart = () => {
+    state.isSpeaking = true;
+    if (ttsCallbacks.onStart) ttsCallbacks.onStart();
+  };
+
+  utt.onend = () => {
+    state.isSpeaking = false;
+    if (ttsCallbacks.onEnd) ttsCallbacks.onEnd();
+    onTTSEnd();   // ← releases the STT gate in mic.js
+  };
+
+  utt.onerror = (e) => {
+    state.isSpeaking = false;
+    if (e.error !== 'interrupted') console.warn('TTS:', e.error);
+    onTTSEnd();   // ← also release on error/cancel so gate never gets stuck
+  };
 
   state.synth.speak(utt);
   setTimeout(() => { if (state.synth.speaking && state.synth.paused) state.synth.resume(); }, 200);
