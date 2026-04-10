@@ -197,6 +197,30 @@ body::before {
 #speech-bubble.show { display: block; }
 #speech-bubble.vision-response { border-color: var(--accent); box-shadow: 0 0 20px rgba(255,107,53,0.2); }
 
+/* Speech bubble is hidden when body has .bubble-off */
+body.bubble-off #speech-bubble { display: none !important; }
+
+/* ── BUBBLE TOGGLE BUTTON ── */
+#bubble-toggle {
+  position: fixed;
+  bottom: 52px;
+  right: 12px;
+  z-index: 310;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border-col);
+  background: rgba(0,20,30,0.85);
+  color: var(--text-col);
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+#bubble-toggle:active { opacity: 1; background: rgba(0,245,255,0.15); }
+body.bubble-off #bubble-toggle { opacity: 0.3; }
+
 /* ── CAMERA OVERLAY ── */
 #camera-overlay {
   position: fixed; inset: 0; z-index: 350;

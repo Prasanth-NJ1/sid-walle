@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>SID — Companion Robot</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -19,7 +20,7 @@
       <div class="tap-sub">TAP TO ACTIVATE</div>
     </div>
   </div>
-  <video id="face-video" style="display:none;position:absolute;width:1px;height:1px;" playsinline muted></video>
+  <video id="face-video" style="display:none;position:absolute;width:1px;height:1px;" playsinline webkit-playsinline muted autoplay></video>
   <canvas id="face-canvas" style="display:none;position:absolute;width:1px;height:1px;"></canvas>
   <button class="corner-btn" id="fullscreen-btn" title="Fullscreen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -34,10 +35,12 @@
   </div>
   <div id="reaction-label">STANDBY</div>
   <div id="face-indicator">● NO FACE</div>
+  <!-- capture-btn removed — auto 5s countdown handles capture
   <button id="capture-btn" title="Capture and Analyse">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
     <span>ANALYSE</span>
   </button>
+  -->
   <div id="main-screen">
     <div id="eyes-wrap">
       <div class="eye-outer" id="eye-left">
@@ -58,10 +61,12 @@
       </div>
     </div>
   </div>
+  <!-- Speech bubble toggle — small pill button bottom-right -->
+  <button id="bubble-toggle" title="Toggle response box">💬</button>
   <div id="speech-bubble"></div>
   <div id="location-toast"></div>
   <div id="camera-overlay">
-    <video id="cam-preview" autoplay playsinline muted></video>
+    <video id="cam-preview" autoplay playsinline muted webkit-playsinline></video>
     <div id="cam-overlay-label">📷 VISION MODE ACTIVE</div>
     <button id="cam-close">✕</button>
   </div>
@@ -77,9 +82,11 @@
     </div>
     <div class="menu-section">
       <div class="menu-section-title">🌐 LLM Server (Ollama / ngrok)</div>
+      <!-- LLM URL text input disabled
       <div class="wifi-input-row">
         <input type="text" id="llm-url-input" class="wifi-input" placeholder="https://xxxx.ngrok-free.app">
       </div>
+      -->
       <button class="btn-primary" id="save-llm-btn" style="width:100%;margin-top:6px;">SAVE &amp; TEST</button>
       <div id="llm-status" style="font-size:10px;color:var(--text-dim);margin-top:6px;min-height:14px;"></div>
     </div>

@@ -100,28 +100,52 @@ async function sendToRobot(location) {
 // ══════════════════════
 let visionPending = false;
 
+let countdownTimer = null;   // holds the setInterval so we can cancel it
+
 function showCameraOverlay() {
-  const stream = captureFrame(); // ensure faceVideo is alive
+  if (dom.cameraOverlay) dom.cameraOverlay.classList.add('show');
   if (dom.camPreview && dom.faceVideo && dom.faceVideo.srcObject) {
     dom.camPreview.srcObject = dom.faceVideo.srcObject;
   }
-  if (dom.cameraOverlay) dom.cameraOverlay.classList.add('show');
-  if (dom.captureBtn) dom.captureBtn.classList.add('visible');
+  startCaptureCountdown();   // auto-capture after 5 s, no button needed
 }
 
 function closeCameraOverlay() {
   if (dom.cameraOverlay) dom.cameraOverlay.classList.remove('show');
-  if (dom.captureBtn)    dom.captureBtn.classList.remove('visible');
   visionPending = false;
+  // Cancel any running countdown if the user closes the overlay early
+  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+  const lbl = document.getElementById('cam-overlay-label');
+  if (lbl) lbl.textContent = '📷 VISION MODE ACTIVE';
+}
+
+function startCaptureCountdown() {
+  let secs = 5;
+  const lbl = document.getElementById('cam-overlay-label');
+  if (lbl) lbl.textContent = `📷 CAPTURING IN ${secs}…`;
+
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    secs--;
+    if (secs > 0) {
+      if (lbl) lbl.textContent = `📷 CAPTURING IN ${secs}…`;
+    } else {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      if (lbl) lbl.textContent = '📸 CAPTURING…';
+      handleCaptureAndAnalyse();
+    }
+  }, 1000);
 }
 
 async function handleCaptureAndAnalyse() {
   if (!state.llmUrl) {
+    closeCameraOverlay();
     showSpeech('Set your LLM server URL in settings first!');
     speak('Please set the LLM server URL in settings.');
     return;
   }
-  const dataUrl = captureFrame();
+  const dataUrl = await captureFrame();
   closeCameraOverlay();
 
   if (!dataUrl) {
@@ -313,6 +337,15 @@ function initUI() {
     else document.exitFullscreen().catch(() => {});
   });
 
+  // Speech bubble toggle
+  document.getElementById('bubble-toggle')?.addEventListener('click', () => {
+    const off = document.body.classList.toggle('bubble-off');
+    // If turning ON while a reply is already showing, hide immediately
+    if (off && dom.speechBubble) {
+      clearTimeout(dom.speechBubble._t);
+    }
+  });
+
   // Volume slider
   const volSlider = document.getElementById('vol-slider');
   const volVal    = document.getElementById('vol-val');
@@ -372,7 +405,7 @@ function initUI() {
   });
 
   // Capture button
-  dom.captureBtn?.addEventListener('click', handleCaptureAndAnalyse);
+  // capture-btn removed — auto-countdown handles capture
 
   // Camera close
   document.getElementById('cam-close')?.addEventListener('click', closeCameraOverlay);
