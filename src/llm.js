@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════
 import { state } from './state.js';
 
-const TEXT_MODEL   = 'richardyoung/smolvlm2-2.2b-instruct:latest';
+const TEXT_MODEL   = 'gemma3:4b';
 const VISION_MODEL = 'gemma3:4b';
 
 // ── System prompt ────────────────────────────────────────────
@@ -45,7 +45,7 @@ PLAIN SPEECH RULES — these are critical because your output goes directly to a
 - NO bullet points, NO hyphens as list markers, NO numbered lists
 - NO headers or section titles
 - Write as you would speak out loud — natural flowing sentences only
-- Maximum 2 sentences per reply
+- Maximum 5 sentences per reply
 
 Examples:
   User: "I have a headache"           -> [EMOTION:worried] Try drinking water and resting in a dark room, and if it persists take a paracetamol.

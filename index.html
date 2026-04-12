@@ -42,24 +42,62 @@
   </button>
   -->
   <div id="main-screen">
-    <div id="eyes-wrap">
-      <div class="eye-outer" id="eye-left">
-        <div class="eye-scan"></div>
-        <div class="eye-iris"></div>
-        <div class="eye-pupil" id="pupil-left"></div>
-        <div class="eye-highlight"></div>
-        <div class="eyelid-top"></div>
-        <div class="eyelid-bot"></div>
-      </div>
-      <div class="eye-outer" id="eye-right">
-        <div class="eye-scan"></div>
-        <div class="eye-iris"></div>
-        <div class="eye-pupil" id="pupil-right"></div>
-        <div class="eye-highlight"></div>
-        <div class="eyelid-top"></div>
-        <div class="eyelid-bot"></div>
-      </div>
-    </div>
+    <svg id="eyes-svg" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0">
+      <defs>
+        <filter id="eye-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+          <feColorMatrix in="blur" type="matrix"
+            values="0 0 0 0 0  0 0.7 1 0 0  0 0.9 1 0 0  0 0 0 0.35 0" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <radialGradient id="glow-l" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(0,180,255,0.08)"/>
+          <stop offset="100%" stop-color="transparent"/>
+        </radialGradient>
+        <radialGradient id="glow-r" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(0,180,255,0.08)"/>
+          <stop offset="100%" stop-color="transparent"/>
+        </radialGradient>
+      </defs>
+
+      <ellipse id="amb-l" fill="url(#glow-l)"/>
+      <ellipse id="amb-r" fill="url(#glow-r)"/>
+
+      <g id="eyes-group" filter="url(#eye-glow)">
+        <!-- LEFT EYE -->
+        <g id="left-eye-group">
+          <circle id="l-sclera" fill="#0d1117"/>
+          <circle id="l-iris" fill="#00ccff"/>
+          <circle id="l-iris-inner" fill="#0088bb" opacity="0.6"/>
+          <circle id="l-pupil" fill="#050810"/>
+          <circle id="l-highlight1" fill="rgba(255,255,255,0.9)"/>
+          <circle id="l-highlight2" fill="rgba(255,255,255,0.5)"/>
+          <rect   id="l-lid-top" fill="#080c14"/>
+          <rect   id="l-lid-bot" fill="#080c14"/>
+          <circle id="l-border" fill="none" stroke="rgba(0,212,255,0.3)" stroke-width="2"/>
+        </g>
+        <rect id="l-brow" fill="#c8e0ff" rx="5"/>
+
+        <!-- RIGHT EYE -->
+        <g id="right-eye-group">
+          <circle id="r-sclera" fill="#0d1117"/>
+          <circle id="r-iris" fill="#00ccff"/>
+          <circle id="r-iris-inner" fill="#0088bb" opacity="0.6"/>
+          <circle id="r-pupil" fill="#050810"/>
+          <circle id="r-highlight1" fill="rgba(255,255,255,0.9)"/>
+          <circle id="r-highlight2" fill="rgba(255,255,255,0.5)"/>
+          <rect   id="r-lid-top" fill="#080c14"/>
+          <rect   id="r-lid-bot" fill="#080c14"/>
+          <circle id="r-border" fill="none" stroke="rgba(0,212,255,0.3)" stroke-width="2"/>
+        </g>
+        <rect id="r-brow" fill="#c8e0ff" rx="5"/>
+
+        <circle id="nose-dot" fill="rgba(0,200,255,0.18)"/>
+      </g>
+    </svg>
   </div>
   <!-- Speech bubble toggle — small pill button bottom-right -->
   <button id="bubble-toggle" title="Toggle response box">💬</button>

@@ -5,7 +5,7 @@
 //  defined here — no circular imports.
 // ═══════════════════════════════════════════════════════
 import { state, dom, eyeColors, reactions, moodIcons, LOCATIONS, LOCATION_MAP } from './state.js';
-import { setMood, wireTTSCallbacks, scheduleBlink } from './eye.js';
+import { setMood, wireTTSCallbacks, scheduleBlink, initEyes } from './eye.js';
 import { speak, loadVoices }              from './tts.js';
 import { startMic, stopMic, micCallbacks } from './mic.js';
 import { startCam, stopCam, captureFrame, camCallbacks } from './cam.js';
@@ -481,7 +481,7 @@ window.addEventListener('load', () => {
   wireCallbacks();
   initUI();
   loadVoices();
-  scheduleBlink();
+  initEyes();   // boot the SVG eye renderer
 
   // Android audio unlock tap
   dom.tapUnlock?.addEventListener('click', async () => {
